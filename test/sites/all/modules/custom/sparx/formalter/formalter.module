@@ -1,0 +1,150 @@
+<?php
+
+function formalter_block_info() {
+    $blocks = array();
+// Generate listing of blocks from this module, for the admin/block page
+    $blocks['home_blog'] = array('info' => t('Dynamic Blog Block shows between paragraph.'));
+    $blocks['slider_images'] = array('info' => t('Dynamic Slider Block shows between paragraph.'));
+    $blocks['company_logo'] = array('info' => t('Dynamic Company logo Block shows between paragraph.'));
+    return $blocks;
+}
+
+function formalter_block_view($delta = '') {
+    global $user;
+    $block = array();
+
+    switch ($delta) {
+        case 'home_blog':
+            $block['subject'] = t('<none>');
+            $block['content'] = dynamic_block_on_homepage();
+            break;
+        case 'slider_images':
+            $block['subject'] = t('<none>');
+            $block['content'] = dynamic_block_slider_images();
+            break;
+        case 'company_logo':
+            $block['subject'] = t('<none>');
+            $block['content'] = dynamic_block_company_logo();
+            break;
+    }
+    return $block;
+}
+
+function dynamic_block_on_homepage() {
+    global $base_url;
+    $output = '';
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'blog')
+            ->propertyCondition('status', NODE_PUBLISHED)
+            ->propertyOrderBy('created', 'DESC')
+            ->range(0, 5)
+            ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $query->execute();
+
+    if (isset($result['node'])) {
+        $news_items_nids = array_keys($result['node']);
+        $output .= '<div class = "normal_paragraph red">';
+        $output .= '<div class = "container">';
+        $output .= '<div class = "text_with_description">';
+        $output .= '<div class = "container">';
+        $output .= '<div class="blog-wraper-heading"><h2>Blog</h2>';
+        $output .= '<div class = "block-links"><a href = "' . $base_url . '/blogs/all"><img style = "height:39px; width:39px" src = "' . $base_url . '/sites/default/files/sites/default/files/circle-arrow.png" alt = ""></a></div></div>';
+
+        $k = 0;
+        for ($i = 0; $i < count($news_items_nids); $i++) {
+            $news_items = node_load($news_items_nids[$i]);
+            // dpm($news_items);
+            if ($i == 0) {
+                $output .= '<div class = "first-col col-lg-6 col-md-6 col-sm-6 col-xs-12">
+            <h2><a href = "' . $base_url . '/node/' . $news_items->nid . '">' . $news_items->title . '</a></h2>
+                <p><a href = "' . $base_url . '/node/' . $news_items->nid . '" class = "links">' . date("d M Y", $news_items->created) . '</a></p>
+                </div>';
+                $output .= '<div class = "second-col col-lg-6 col-md-6 col-sm-6 col-xs-12">';
+            } else {
+
+                $output .= '<div class = "col-lg-6 col-md-6 col-sm-6 col-xs-12">';
+
+                $output .= '<h3><a href = "' . $base_url . '/node/' . $news_items->nid . '">' . $news_items->title . '</a></h3>
+
+                        <p><a href = "' . $base_url . '/node/' . $news_items->nid . '" class = "links">' . date("d M Y", $news_items->created) . '</a></p>';
+
+                $output .= '</div>';
+            }
+            
+            if ($i == 4) {
+                  $output .= '</div>';
+            }
+        }
+
+        $output .= "</div></div></div></div>";
+    }
+
+    return $output;
+}
+
+function dynamic_block_slider_images() {
+    $output = '';
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'para_slider')
+            ->propertyCondition('status', NODE_PUBLISHED)
+            ->propertyOrderBy('created', 'DESC')
+            ->range(0, 5)
+            ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $query->execute();
+
+    if (isset($result['node'])) {
+        $news_items_nids = array_keys($result['node']);
+        $news_items = entity_load("node", $news_items_nids);
+        // dpm($news_items);
+        $output .= '<div class="slider_images_with_description_ remind">';
+        $output .= '<section class="slider">';
+        $output .= '<div class="flexslider1">';
+        $output .= '<ul class="slides">';
+
+        foreach ($news_items as $key => $value) {
+            $image_path = file_create_url($value->field_image['und'][0]['uri']);
+            $output .= '<li><img src="' . $image_path . '" height="400" width="2000" alt="" /><div class="slider-descp"><div class="container"><div class="slider-desc-txt"><h2>' . $value->title . '</h2>' . $value->body['und'][0]['value'] . '<a class="btn btn-default primary-btn" href="' . $value->field_button_link['und'][0]['url'] . '">' . $value->field_button_link['und'][0]['title'] . '</a></div></div></div></li>';
+        }
+
+        $output .= '</ul>';
+        $output .= '</div>';
+        $output .= '</section>';
+        $output .= '</div>';
+        return $output;
+    }
+}
+
+function dynamic_block_company_logo() {
+
+    $output = '';
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'company_logo')
+            ->propertyCondition('status', NODE_PUBLISHED)
+            ->propertyOrderBy('created', 'DESC')
+            ->range(0, 5)
+            ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $query->execute();
+    if (isset($result['node'])) {
+        $news_items_nids = array_keys($result['node']);
+        $news_items = entity_load("node", $news_items_nids);
+        //dpm($news_items);
+        $output .= '<div class="Company-logo-section1 normal_paragraph blue">
+                      <div class="container text-center">';
+        foreach ($news_items as $key => $value) {
+            $image_path = file_create_url($value->field_logo1['und'][0]['uri']);
+            $output .= '<a href="' . $value->field_button_link['und'][0]['url'] . '"><img alt="" src="'.$image_path.'" /></a>';
+        }
+        
+        $output .= '</div></div>';
+        return $output;
+    }
+}
